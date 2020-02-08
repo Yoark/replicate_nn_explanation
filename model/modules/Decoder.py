@@ -18,8 +18,9 @@ class AttnDecoder(nn.Module, FromParams) :
         self.hidden_size = hidden_size
         self.output_size = output_size
         self.linear_1 = nn.Linear(hidden_size, output_size)
-
+        #import ipdb; ipdb.set_trace()
         attention['hidden_size'] = self.hidden_size
+
         self.attention = Attention.from_params(Params(attention))
 
         self.use_attention = use_attention

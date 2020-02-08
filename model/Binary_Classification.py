@@ -23,9 +23,12 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 class Model() :
     def __init__(self, configuration, args, pre_embed=None) :
+        # ! Set up cofigs, encoder, decoder, attention, optimizer, loss
+        #import ipdb; ipdb.set_trace()
         configuration = deepcopy(configuration)
         self.configuration = deepcopy(configuration)
-
+        #import ipdb; ipdb.set_trace()
+        # !pre_embed is newly added
         configuration['model']['encoder']['pre_embed'] = pre_embed
         self.encoder = Encoder.from_params(Params(configuration['model']['encoder'])).to(device)
 
@@ -81,9 +84,12 @@ class Model() :
         sorting_idx = get_sorting_index_with_noise_from_lengths([len(x) for x in data_in], noise_frac=0.1)
         data = [data_in[i] for i in sorting_idx]
         target = [target_in[i] for i in sorting_idx]
-        if target_pred :
+        if target_pred:
             target_pred = [target_pred[i] for i in sorting_idx]
             target_attn = [target_attn_in[i] for i in sorting_idx]
+        if self.pre_loaded_attn:
+            target_attn = [target_attn_in[i] for i in sorting_idx]
+            
         
         self.encoder.train()
         self.decoder.train()
@@ -108,9 +114,13 @@ class Model() :
                 
                 if len(batch_target_pred.shape) == 1 : #(B, )
                     batch_target_pred = batch_target_pred.unsqueeze(-1) #(B, 1)
-            else :
+            elif not target_pred and self.pre_loaded_attn :
+                batch_pre_attn = target_attn[n:n+bsize]
+                batch_data = BatchHolder(batch_doc, batch_pre_attn)
+                # !guess I could add something here.
+            else:
                 batch_data = BatchHolder(batch_doc)
-
+            # ??? what is this
             self.encoder(batch_data)
             self.decoder(batch_data)
 
@@ -129,6 +139,7 @@ class Model() :
             else :
                 loss_orig = self.criterion(batch_data.predict, batch_target)
             
+            # balance loss
             weight = batch_target * self.pos_weight + (1 - batch_target)
             loss = (loss_orig * weight).mean(1).sum()
 
@@ -147,7 +158,7 @@ class Model() :
                     self.attn_optim.step()
 
             loss_total += float(loss.data.cpu().item())
-            if target_attn_in : 
+            if target_pred and target_attn_in : 
                 loss_orig_total += float(loss_orig.data.cpu().item())
                 tvd_loss_total += float(tvd_loss.data.cpu().item())
                 kl_loss_total += float(kl_loss.data.cpu().item())
@@ -166,7 +177,7 @@ class Model() :
 
         for n in tqdm(range(0, N, bsize)) :
             batch_doc = data[n:n+bsize]
-            if target_attn :
+            if target_attn:
                 batch_target_attn = target_attn[n:n+bsize]
                 batch_data = BatchHolder(batch_doc, batch_target_attn)
             else :
@@ -183,7 +194,7 @@ class Model() :
             predict = batch_data.predict.cpu().data.numpy()#.astype('float16')
             outputs.append(predict)
             
-            if target_attn :
+            if target_attn and self.adversarial:
                 #compute JS-divergence for batched attentions
                 batch_jsdscores = js_divergence(batch_data.target_attn, batch_data.attn).squeeze(1).cpu().data.numpy()#.astype('float16')
                 js_scores.append(batch_jsdscores)
@@ -191,7 +202,7 @@ class Model() :
         outputs = [x for y in outputs for x in y]
         if self.decoder.use_attention :
             attns = [x for y in attns for x in y]
-        if target_attn :
+        if target_attn and self.adversarial:
             js_score = sum([x for y in js_scores for x in y]).item()
         else :
             js_score = None

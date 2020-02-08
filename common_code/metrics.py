@@ -52,6 +52,7 @@ def print_metrics(metrics, adv=False) :
         if '/1/' in k or 'auc' in k:
             d[k.split('/', 1)[0]][k.split('/', 1)[1]] = v
 
+
     df = pd.DataFrame(d)
     with pd.option_context('display.max_columns', 30):
         display(df.round(3))

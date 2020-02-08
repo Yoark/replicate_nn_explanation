@@ -35,9 +35,11 @@ class EncoderRNN(Encoder) :
         lengths = data.lengths
         embedding = self.embedding(seq) #(B, L, E)
         packseq = nn.utils.rnn.pack_padded_sequence(embedding, lengths, batch_first=True, enforce_sorted=False)
+        #import ipdb; ipdb.set_trace()
         output, (h, c) = self.rnn(packseq)
+        #import ipdb; ipdb.set_trace()
         output, lengths = nn.utils.rnn.pad_packed_sequence(output, batch_first=True, padding_value=0)
-
+        #import ipdb; ipdb.set_trace()
         data.hidden = output
         data.last_hidden = torch.cat([h[0], h[1]], dim=-1)
 

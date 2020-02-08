@@ -3,6 +3,7 @@ import attention.model.Binary_Classification as BC
 import codecs, json
 from tqdm import tqdm
 import numpy as np
+from functools import partial
 
 class Trainer() :
     def __init__(self, dataset, args, config) :
@@ -12,12 +13,23 @@ class Trainer() :
         self.display_metrics = True
     
     def train_standard(self, train_data, test_data, args, save_on_metric='roc_auc') :
-
+        """
+        Define high level training procedures, give input to train fucniton, get output from it
+        print training process and metrics, save model, etc
+        """
         best_metric = 0.0
-        for i in tqdm(range(args.n_iters)) :
 
-            _, loss_tr, loss_tr_orig, _, _ = self.model.train(train_data.X, train_data.y)
-            predictions_tr, attentions_tr, _ = self.model.evaluate(train_data.X)
+        for i in tqdm(range(args.n_iters)) :
+            if args.pre_loaded_attn:
+                _, loss_tr, loss_tr_orig, _, _ = self.model.train(train_data.X, train_data.y, target_attn_in=train_data.gold_attns)
+                predictions_tr, attentions_tr, _ = self.model.evaluate(train_data.X, target_attn=train_data.gold_attns)
+                predictions_te, attentions_te, _ = self.model.evaluate(test_data.X, target_attn=test_data.gold_attns) 
+
+            else:
+                _, loss_tr, loss_tr_orig, _, _ = self.model.train(train_data.X, train_data.y)
+                predictions_tr, attentions_tr, _ = self.model.evaluate(train_data.X)
+                predictions_te, attentions_te, _ = self.model.evaluate(test_data.X) 
+
             predictions_tr = np.array(predictions_tr)
             train_metrics = self.metrics(np.array(train_data.y), predictions_tr)
             print_str = "FULL (WEIGHTED) LOSS: %f | ORIG (UNWEIGHTED) LOSS: %f" % (loss_tr, loss_tr_orig)
@@ -26,8 +38,8 @@ class Trainer() :
             print("TRAIN METRICS:")
             if self.display_metrics:
                 print_metrics(train_metrics, adv=False)
-
-            predictions_te, attentions_te, _ = self.model.evaluate(test_data.X) 
+            
+            #predictions_te, attentions_te, _ = self.model.evaluate(test_data.X) 
             predictions_te = np.array(predictions_te)
             test_metrics = self.metrics(np.array(test_data.y), predictions_te)
 
@@ -45,7 +57,7 @@ class Trainer() :
                 print("Model not saved on ", save_on_metric, metric)
 
             dirname = self.model.save_values(save_model=save_model)
-            if save_model:
+            if save_model and not args.pre_loaded_attn:
                 attentions_tr = [el.tolist() for el in attentions_tr]
                 attentions_te = [el.tolist() for el in attentions_te]
                 print("SAVING PREDICTIONS AND ATTENTIONS")
@@ -53,6 +65,10 @@ class Trainer() :
                 json.dump(predictions_te.tolist(), codecs.open(dirname + '/test_predictions_best_epoch.json', 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
                 json.dump(attentions_tr, codecs.open(dirname + '/train_attentions_best_epoch.json', 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
                 json.dump(attentions_te, codecs.open(dirname + '/test_attentions_best_epoch.json', 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
+            elif save_model and args.pre_loaded_attn:
+                print("SAVING PREDICTIONS AND ATTENTIONS")
+                json.dump(predictions_tr.tolist(), codecs.open(dirname + '/train_predictions_best_epoch.json', 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
+                json.dump(predictions_te.tolist(), codecs.open(dirname + '/test_predictions_best_epoch.json', 'w', encoding='utf-8'), separators=(',', ':'), sort_keys=True, indent=4)
 
             print("DIRECTORY:", dirname)
 
@@ -130,18 +146,27 @@ class Evaluator() :
         self.model.dirname = dirname
         self.metrics = calc_metrics_classification
         self.display_metrics = True
+        self.pre_loaded_attn = args.pre_loaded_attn
 
     def evaluate(self, test_data, save_results=False) :
         if self.model.adversarial :
             predictions, attentions, jsd_score = self.model.evaluate(test_data.X, target_attn=test_data.gold_attns)
             predictions = np.array(predictions)
             test_metrics = self.metrics(np.array(test_data.y), predictions, np.array(test_data.true_pred), jsd_score)
-        else :
+            test_metrics['TVD'] = test_metrics['TVD']/len(test_data.y)
+            test_metrics['js_divergence'] = test_metrics['js_divergence']/len(test_data.y)
+        elif self.pre_loaded_attn :
+            predictions, attentions, _ = self.model.evaluate(test_data.X, target_attn=test_data.gold_attns)
+            predictions = np.array(predictions)
+            test_metrics = self.metrics(test_data.y, predictions)
+        else:
             predictions, attentions, _ = self.model.evaluate(test_data.X)
             predictions = np.array(predictions)
             test_metrics = self.metrics(test_data.y, predictions)
-
+        #import ipdb; ipdb.set_trace()
+        
         if self.display_metrics :
+
             print_metrics(test_metrics, adv=self.model.adversarial)
 
         if save_results :

@@ -1,9 +1,21 @@
 from attention.configurations import generate_config
 from attention.Trainers.TrainerBC import Trainer, Evaluator
-            
+from attention.model.modelUtils import count_params
+
 def train_dataset(dataset, args, config='lstm') :
         config = generate_config(dataset, args, config)
         trainer = Trainer(dataset, args, config=config)
+
+        num_enc_params = count_params(trainer.model.encoder_params)
+        num_dec_params = count_params(trainer.model.decoder_params)
+        
+        if not args.frozen_attn:
+            num_att_params = count_params(trainer.model.attn_params)
+            total_params = num_enc_params + num_att_params + num_dec_params
+        else:
+            total_params = num_enc_params + num_dec_params
+            
+        print("TOTAL TRAINABLE PARAMETERS", total_params)
         #go ahead and save model
         dirname = trainer.model.save_values(save_model=False)
         print("DIRECTORY:", dirname)

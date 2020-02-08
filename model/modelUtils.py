@@ -43,7 +43,7 @@ class BatchHolder() :
 
         self.lengths = torch.LongTensor(np.array(lengths)).to(device)
         self.seq = torch.LongTensor(np.array(expanded, dtype='int64')).to(device)
-        self.masks = torch.ByteTensor(np.array(masks)).to(device)
+        self.masks = torch.BoolTensor(np.array(masks)).to(device)
 
         self.hidden = None
         self.predict = None
@@ -53,6 +53,7 @@ class BatchHolder() :
                 self.target_attn = torch.FloatTensor(expanded_attn).to(device)
         self.inv_masks = ~self.masks
 
+    # !take a look at this func
     def generate_frozen_uniform_attn(self):
         attn = np.zeros((self.B, self.maxlen))
         inv_l = 1. / (self.lengths.cpu().data.numpy() - 2)
@@ -78,3 +79,12 @@ def jsd(p, q) :
     jsd = 0.5 * (kld(p, m) + kld(q, m)) #for each instance in the batch
     
     return jsd.unsqueeze(-1) #jsd.squeeze(1).sum()
+
+def count_params(params, trainable=True):
+    """
+    count the params for a model
+    """
+    if not trainable:
+        return sum(p.numel() for p in params)
+    else:
+        return sum(p.numel() for p in params if p.requires_grad)
