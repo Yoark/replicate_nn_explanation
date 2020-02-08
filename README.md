@@ -1,4 +1,4 @@
-# Attention is not not Explanation (**replication**)
+# Attention is not not Explanation (**replication**) replicator: Zijiao Yang
 
 Code for replication of the EMNLP 2019 paper *[Attention is not not Explanation](https://www.aclweb.org/anthology/D19-1002/)* by Wiegreffe & Pinter.
 
