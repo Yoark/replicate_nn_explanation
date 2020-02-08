@@ -1,8 +1,14 @@
-# Attention is not not Explanation (**replication**) replicator: Zijiao Yang
+# Attention is not not Explanation (**replication**) by Zijiao Yang
 
 Code for replication of the EMNLP 2019 paper *[Attention is not not Explanation](https://www.aclweb.org/anthology/D19-1002/)* by Wiegreffe & Pinter.
 
 *[Attention is not Explanation](https://arxiv.org/abs/1902.10186)*. is related.
+
+
+
+This code is based on two repos: [Wiegreffe & Pinter](https://github.com/sarahwie/attention),  [Jain & Wallace](https://github.com/successar/AttentionExplanation)
+
+
 
 Dependencies
 --------------
