@@ -1,53 +1,36 @@
-# Attention is not not Explanation
+# Attention is not not Explanation (**replication**)
 
-Code for the EMNLP 2019 paper *[Attention is not not Explanation](https://www.aclweb.org/anthology/D19-1002/)* by Wiegreffe & Pinter.
+Code for replication of the EMNLP 2019 paper *[Attention is not not Explanation](https://www.aclweb.org/anthology/D19-1002/)* by Wiegreffe & Pinter.
 
-When using this codebase, please cite:
-```
-@inproceedings{wiegreffe-pinter-2019-attention,
-    title = "Attention is not not Explanation",
-    author = "Wiegreffe, Sarah  and
-      Pinter, Yuval",
-    booktitle = "Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLP-IJCNLP)",
-    month = nov,
-    year = "2019",
-    address = "Hong Kong, China",
-    publisher = "Association for Computational Linguistics",
-    url = "https://www.aclweb.org/anthology/D19-1002",
-    doi = "10.18653/v1/D19-1002",
-    pages = "11--20"
-}
-```
-
-We've based our repository on the [code](https://github.com/successar/AttentionExplanation) provided by Sarthak Jain & Byron Wallace for their paper *[Attention is not Explanation](https://arxiv.org/abs/1902.10186)*.
+*[Attention is not Explanation](https://arxiv.org/abs/1902.10186)*. is related.
 
 Dependencies
 --------------
-Please refer to the installation instructions for the repository provided by [Jain & Wallace](https://github.com/successar/AttentionExplanation). We use the same dependencies.
+Please refer to the installation instructions for the repository provided by [Jain & Wallace](https://github.com/successar/AttentionExplanation). The same dependencies are used.
 Also, make sure to export the meta-directory into which you clone `attention` to your PYTHONPATH in order for the imports to work correctly. For example, if the path to the cloned directory is `/home/users/attention/`, then run `export PYTHONPATH='/home/users'`.
 
 Data Preprocessing
 --------------
-Please perform the preprocessing instructions provided by Jain & Wallace [here](https://github.com/successar/AttentionExplanation/tree/master/preprocess). We replicated these instructions for the `Diabetes`, `Anemia`, `SST`, `IMDb`, `AgNews`, and `20News` datasets.
+Please perform the preprocessing instructions provided by Jain & Wallace [here](https://github.com/successar/AttentionExplanation/tree/master/preprocess). We replicated these instructions for the `SST`, `IMDb`, `AgNews`, and `20News` datasets.
 
 Running Baselines
 --------------
-We replicate the reported baselines in Jain & Wallace's paper (as reported in our paper in Table 2) by running the following commands:
-- `./run_baselines.sh [Diabetes, Anemia, AgNews, 20News_sports, imdb, sst]`
+I replicate the reported baselines in Wiegreffe & pinter, Table 2 by running the following commands:
+- `./run_baselines.sh [AgNews, 20News_sports, imdb, sst]`
 
-Freezing the Attention Distribution (Section 3.1)
+Freezing the Attention Distribution (Section 3.2)
 --------------
-- `./run_frozen_attention.sh [Diabetes, Anemia, AgNews, 20News_sports, imdb, sst]`
 
-Running Random Seeds Experiments (Section 3.2)
---------------
-- `parallel ./run_seeds.sh :::: seeds.txt ::: sst AgNews imdb 20News_sports Diabetes Anemia`
-- Code for constructing the violin plots in Figure 3 can be found in `seed_graphs.py` and `Seed_graphs.ipynb`.
+- `./run_frozen_attention.sh [AgNews, 20News_sports, imdb, st]`
+
+## Guiding simpler Models (Section 3.4)
+
+* `python -W ignore train_and_run_experiments_bc.py --dataset [some dataset] --data_dir . --output_dir [path/to/save/model] --attention pre-loaded --gold_label_dir [path/to/saved/model/with/attentions] --encoder average`
 
 Running Adversarial Model Experiments (Section 4)
 --------------
-- `./run_adversarial.sh [Diabetes, Anemia, AgNews, 20News_sports, imdb, sst] [lambda_value] [path/to/saved/model/with/gold/attentions/and/predictions]`
+- `./run_adversarial.sh [AgNews, 20News_sports, imdb, sst] [lambda_value] [path/to/saved/model/with/gold/attentions/and/predictions]`
 
 Remaining Todos
 --------------
-- 3.3 BOWs experiments
+- Fix the bug for variance baseline **section 3.3**
